@@ -32,6 +32,24 @@ const ASSETS  = './Assets/';
 const SPRITES = ASSETS + 'SpaceShipShooter/Sprites/';
 const BG_PATH = ASSETS + 'space_background_pack/Blue Version/layered/';
 
+// ─── AUDIO ───────────────────────────────────────────────────────────────────
+// Uses a small pool of Audio elements per sound so shots can overlap.
+const sfx = {};
+
+function makePool(src, volume = 1, size = 6) {
+  const pool = Array.from({ length: size }, () => {
+    const a = new Audio(src);
+    a.volume = volume;
+    return a;
+  });
+  let i = 0;
+  return () => {
+    pool[i].currentTime = 0;
+    pool[i].play().catch(() => {});
+    i = (i + 1) % size;
+  };
+}
+
 const FIRE_RATE = 0.13;
 
 // ─── STAGE CONFIGS ───────────────────────────────────────────────────────────
@@ -504,6 +522,7 @@ class Player {
   }
 
   fire() {
+    if (sfx.laser) sfx.laser();
     const bx = this.x, by = this.y - this.sz / 2;
     if (this.pLevel === 1) {
       this.bullets.push(new Bullet(bx, by, 0, -560));
@@ -928,6 +947,7 @@ function loop(ts) {
   ctx.fillText('Loading…', W / 2, H / 2);
 
   imgs = await loadAll();
+  sfx.laser = makePool(ASSETS + 'sfx/laser.mp3', 0.4);
 
   smallFrames = [imgs.eSmall1, imgs.eSmall2];
   medFrames   = [imgs.eMed1,   imgs.eMed2];
