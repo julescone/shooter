@@ -561,6 +561,7 @@ class Player {
 let state = 'loading';
 let bg, player, enemies = [], exps = [], pups = [];
 let score, wavesSpawned, waveTimer, waveInterval, phase, overlayTimer, introTimer;
+let extraLifeDropped = false; // reset each stage; limits extra-life drops to one per stage
 let currentStage = 1;
 let imgs         = null;
 let highScore    = parseInt(localStorage.getItem('spaceHighScore') || '0', 10);
@@ -600,10 +601,11 @@ function startStage() {
     player.inv = 0; player.dead = false;
   }
 
-  enemies      = [];
-  exps         = [];
-  pups         = [];
-  wavesSpawned = 0;
+  enemies          = [];
+  exps             = [];
+  pups             = [];
+  extraLifeDropped = false;
+  wavesSpawned     = 0;
   waveInterval = cfg.waveIntervalStart;
   waveTimer    = 2.0;
   phase        = 'waves';
@@ -695,8 +697,13 @@ function update(dt) {
           e.gone = true;
           score += e.pts;
           boom(e.x, e.y, e.sz * 1.5);
-          if (Math.random() < 0.22)
-            pups.push(new PowerUp(puFrames, e.x, e.y, Math.floor(Math.random() * 4)));
+          if (Math.random() < 0.22) {
+            const type = extraLifeDropped
+              ? Math.floor(Math.random() * 3)       // 0-2 only (no extra life)
+              : Math.floor(Math.random() * 4);       // 0-3 (extra life possible)
+            if (type === 3) extraLifeDropped = true;
+            pups.push(new PowerUp(puFrames, e.x, e.y, type));
+          }
         }
       }
     }
