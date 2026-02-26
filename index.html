@@ -55,6 +55,26 @@ async function decodeSfx(dataUrl, volume = 1) {
   };
 }
 
+function makeExplodeSfx(volume = 0.5) {
+  const dur     = 0.7;
+  const samples = Math.floor(audioCtx.sampleRate * dur);
+  const buf     = audioCtx.createBuffer(1, samples, audioCtx.sampleRate);
+  const data    = buf.getChannelData(0);
+  for (let i = 0; i < samples; i++) {
+    const t = i / samples;
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 1.5);
+  }
+  return () => {
+    const src  = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+    gain.gain.value = volume;
+    src.buffer = buf;
+    src.connect(gain);
+    gain.connect(audioCtx.destination);
+    src.start();
+  };
+}
+
 const FIRE_RATE = 0.13;
 
 // ─── STAGE CONFIGS ───────────────────────────────────────────────────────────
@@ -480,6 +500,7 @@ class Player {
 
   hit() {
     if (this.inv > 0) return;
+    if (sfx.explode) sfx.explode();
     this.lives--;
     this.inv = 2.5;
     if (this.lives <= 0) {
@@ -966,6 +987,7 @@ function loop(ts) {
     loadAll(),
     decodeSfx(LASER_B64, 0.4),
   ]);
+  sfx.explode = makeExplodeSfx();
 
   smallFrames = [imgs.eSmall1, imgs.eSmall2];
   medFrames   = [imgs.eMed1,   imgs.eMed2];
