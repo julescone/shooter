@@ -75,6 +75,26 @@ function makeExplodeSfx(volume = 0.5) {
   };
 }
 
+function makeEnemyExplodeSfx(volume = 0.35) {
+  const dur     = 0.35;
+  const samples = Math.floor(audioCtx.sampleRate * dur);
+  const buf     = audioCtx.createBuffer(1, samples, audioCtx.sampleRate);
+  const data    = buf.getChannelData(0);
+  for (let i = 0; i < samples; i++) {
+    const t = i / samples;
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.5);
+  }
+  return () => {
+    const src  = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+    gain.gain.value = volume;
+    src.buffer = buf;
+    src.connect(gain);
+    gain.connect(audioCtx.destination);
+    src.start();
+  };
+}
+
 const FIRE_RATE = 0.13;
 
 // ─── STAGE CONFIGS ───────────────────────────────────────────────────────────
@@ -718,6 +738,7 @@ function update(dt) {
           e.gone = true;
           score += e.pts;
           boom(e.x, e.y, e.sz * 1.5);
+          if (sfx.enemyExplode) sfx.enemyExplode();
           if (Math.random() < 0.22) {
             const type = extraLifeDropped
               ? Math.floor(Math.random() * 3)       // 0-2 only (no extra life)
@@ -987,7 +1008,8 @@ function loop(ts) {
     loadAll(),
     decodeSfx(LASER_B64, 0.4),
   ]);
-  sfx.explode = makeExplodeSfx();
+  sfx.explode      = makeExplodeSfx();
+  sfx.enemyExplode = makeEnemyExplodeSfx();
 
   smallFrames = [imgs.eSmall1, imgs.eSmall2];
   medFrames   = [imgs.eMed1,   imgs.eMed2];
